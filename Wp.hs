@@ -51,6 +51,7 @@ data NBinOp = NAdd
             | NMul
             | NDiv
             | NRem
+            deriving Eq
 
 instance Show NBinOp where
     show NAdd = "+"
@@ -64,6 +65,7 @@ data NExpr = NConst Int -- numeral constant
            | NVar Var -- numeral variable
            | NOp NBinOp NExpr NExpr -- left OP right
            | NArray Var NExpr -- Var[NExpr]
+           deriving Eq
 
 instance Show NExpr where
     show (NConst n)   = show n
@@ -92,6 +94,7 @@ data CBinOp = CEqual
              | CGreater
              | CLeq
              | CGeq
+             deriving Eq
 
 instance Show CBinOp where
     show CEqual = "="
@@ -105,8 +108,9 @@ data LBinOp = LEquiv
             | LAnd
             | LOr
             | LImpl
+            deriving Eq
 
-data QOp = QAll | QExists
+data QOp = QAll | QExists deriving Eq
 
 instance Show LBinOp where
     show LEquiv = "="
@@ -126,10 +130,12 @@ data LExpr = LConst Bool -- True/False
            | LNot LExpr -- NOT op
            | LQuant QOp Var LExpr LExpr -- (QOp v: g: s)
            | LArray Var NExpr -- Var[NExpr]
+           deriving Eq
 
 instance Show LExpr where
     show (LConst v)       = show v
     show (LVar v)         = show v
+    show (LOp LAnd (LComp or ll lr) (LComp ol rl rr)) = if lr == rl then show ll ++ show or ++ show lr ++ show ol ++ show rr else error "fuck"
     show (LOp o l r)      = "(" ++ show l ++ show o ++ show r ++ ")"
     show (LComp o l r)    = "(" ++ show l ++ show o ++ show r ++ ")"
     show (LNot e)         = "~" ++ show e
@@ -150,19 +156,6 @@ true = LConst True
 
 false :: LExpr
 false = LConst False
-
-{-
--- Substitutes free occurences of v1 in e with v2
-subfreel :: LExpr -> Var -> LExpr -> LExpr
-subfreel e@(LConst _) _ _ = e
-subfreel e@(LVar v) v1 v2 = if v == v1 then v2 else e
-subfreel (LOp o l r) v1 v2 = LOp o (subfreel l v1 v2) (subfreel r v1 v2)
-subfreel (LComp o l r) v1 v2 = LComp o (subfreen l v1 v2) (subfreen r v1 v2)
-subfreel (LNot e) v1 v2 = LNot (subfreel e v1 v2)
-subfreel e@(LAll v g s) v1 v2 = if v == v1 then e else (LAll v2 (subfreel g v1 v2) (subfreel s v1 v2))
-subfreel e@(LAny v g s) v1 v2 = if v == v1 then e else (LAny v2 (subfreel g v1 v2) (subfreel s v1 v2))
-subfreel (LArray v i) v1 v2 = if v == v1 then LArray v2 (subfreen i v1 v2) else LArray v (subfreen i v1 v2)
--}
 
 -- Shorthand for (0 <= i < N)
 range :: NExpr -> Var -> NExpr -> LExpr
@@ -188,9 +181,6 @@ found = bool "found"
 
 exists :: Var -> LExpr -> LExpr -> LExpr
 exists = LQuant QExists
-
---anyTest :: LExpr
---anyTest = lany vari (range (NConst 0) vari (NVar varN)) (LOp LEquiv (LArray vara (NVar vari)) (LConst True))
 
 inv1a :: LExpr
 inv1a = exists vark (range (NConst 0) vark (NVar vari)) (LOp LEquiv (LArray vara (NVar vark)) (LVar varx))
