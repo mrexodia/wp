@@ -79,12 +79,12 @@ instance Num NExpr where
     signum = undefined
     fromInteger i = NConst (fromIntegral i)
 
--- Substitutes free occurences of v1 in e with v2
-subfreen :: NExpr -> Var -> Var -> NExpr
+-- Substitutes free occurences of v in e1 with e2
+subfreen :: NExpr -> Var -> NExpr -> NExpr
 subfreen e@(NConst _) _ _ = e
-subfreen e@(NVar v) v1 v2 = if v == v1 then NVar v2 else e
-subfreen (NOp o l r) v1 v2 = NOp o (subfreen l v1 v2) (subfreen r v1 v2)
-subfreen (NArray v i) v1 v2 = if v == v1 then NArray v2 (subfreen i v1 v2) else NArray v (subfreen i v1 v2)
+subfreen e@(NVar v1) v2 n = if v1 == v2 then n else e
+subfreen (NOp o l r) v n = NOp o (subfreen l v n) (subfreen r v n)
+subfreen e@(NArray v1 i) v2 n = if v1 == v2 then e else NArray v1 (subfreen i v2 n)
 
 -- Numeral comparison operators
 data CBinOp = CEqual
@@ -132,16 +132,18 @@ instance Show LExpr where
     show (LAny v g s) = "(ANY " ++ show v ++ ": " ++ show g ++ ": " ++ show s ++ ")"
     show (LArray v e) = show v ++ "[" ++ show e ++ "]"
 
+{-
 -- Substitutes free occurences of v1 in e with v2
-subfreel :: LExpr -> Var -> Var -> LExpr
+subfreel :: LExpr -> Var -> LExpr -> LExpr
 subfreel e@(LConst _) _ _ = e
-subfreel e@(LVar v) v1 v2 = if v == v1 then LVar v2 else e
+subfreel e@(LVar v) v1 v2 = if v == v1 then v2 else e
 subfreel (LOp o l r) v1 v2 = LOp o (subfreel l v1 v2) (subfreel r v1 v2)
 subfreel (LComp o l r) v1 v2 = LComp o (subfreen l v1 v2) (subfreen r v1 v2)
 subfreel (LNot e) v1 v2 = LNot (subfreel e v1 v2)
 subfreel e@(LAll v g s) v1 v2 = if v == v1 then e else (LAll v2 (subfreel g v1 v2) (subfreel s v1 v2))
 subfreel e@(LAny v g s) v1 v2 = if v == v1 then e else (LAny v2 (subfreel g v1 v2) (subfreel s v1 v2))
 subfreel (LArray v i) v1 v2 = if v == v1 then LArray v2 (subfreen i v1 v2) else LArray v (subfreen i v1 v2)
+-}
 
 -- Shorthand for (0 <= i < N)
 range :: NExpr -> Var -> NExpr -> LExpr
@@ -167,9 +169,9 @@ instance Show Expr where
     show (NExpr e) = show e
 
 -- Substitutes free occurences of v1 in e with v2
-subfree :: Expr -> Var -> Var -> Expr
+{-subfree :: Expr -> Var -> Var -> Expr
 subfree (LExpr e) v1 v2 = LExpr (subfreel e v1 v2)
-subfree (NExpr e) v1 v2 = NExpr (subfreen e v1 v2)
+subfree (NExpr e) v1 v2 = NExpr (subfreen e v1 v2)-}
 
 data Statement = Skip
                | IfElse LExpr Statement Statement
